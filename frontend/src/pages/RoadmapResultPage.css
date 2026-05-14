@@ -1,0 +1,578 @@
+* {
+    box-sizing: border-box;
+}
+
+.roadmap-result {
+    padding: 3rem 0;
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    min-height: 100vh;
+}
+
+.tech-header {
+    background: var(--surface);
+    padding: 3rem;
+    border-radius: var(--radius-xl);
+    margin-bottom: 5rem;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-xl);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.tech-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(to bottom, var(--primary), var(--secondary));
+}
+
+.target-badge {
+    background: rgba(99, 102, 241, 0.1);
+    color: var(--primary);
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-full);
+    font-size: 0.875rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.header-left h1 {
+    font-size: 3.5rem;
+    font-weight: 900;
+    line-height: 1.1;
+    letter-spacing: -2px;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.progress-stat {
+    width: 280px;
+    background: var(--bg-color);
+    padding: 1.5rem;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+}
+
+.stat-label {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+}
+
+.bar-bg {
+    height: 8px;
+    background: var(--border-color);
+    border-radius: var(--radius-full);
+    margin-bottom: 0.5rem;
+    overflow: hidden;
+}
+
+.bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary), var(--secondary));
+    box-shadow: 0 0 20px var(--primary);
+    transition: width 1s ease-in-out;
+}
+
+/* ==========================================
+   SNAKE LAYOUT — GRID-BASED
+   ========================================== */
+.snake-container {
+    max-width: 1200px;
+    margin: 0 auto 8rem;
+    padding: 0 80px; /* space for u-turn curves on sides */
+}
+
+.snake-row {
+    display: grid;
+    grid-template-columns: 280px 280px 280px;
+    column-gap: 80px;
+    justify-content: center;
+    margin-bottom: 0; /* controlled by row gap, not margin */
+    position: relative;
+}
+
+/* Add vertical spacing between rows, but not after the last one */
+.snake-row + .snake-row {
+    margin-top: 120px;
+}
+
+/* Each cell in the grid */
+.node-cell {
+    width: 280px;
+    height: 260px;
+    position: relative;
+}
+
+.empty-cell {
+    /* Invisible but takes up grid space */
+    visibility: hidden;
+}
+
+/* Phase card */
+.node-box {
+    width: 100%;
+    height: 100%;
+    padding: 1.5rem;
+    background: var(--surface);
+    border: 1px solid var(--border-color);
+    border-radius: 2rem;
+    z-index: 10;
+    position: relative;
+    text-align: center;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05), inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+}
+
+.node-cell.completed .node-box {
+    border-color: rgba(99, 102, 241, 0.3);
+    background: linear-gradient(135deg, #ffffff 0%, #f9faff 100%);
+}
+
+.node-box:hover {
+    transform: translateY(-12px) scale(1.02);
+    border-color: var(--primary);
+    box-shadow: 0 25px 50px -12px rgba(99, 102, 241, 0.15);
+}
+
+/* ==========================================
+   CONNECTORS
+   ========================================== */
+
+/* --- Horizontal connectors --- */
+.connector.horizontal {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 80px;
+    height: 6px;
+    z-index: 5;
+}
+
+.connector.horizontal .line {
+    width: 100%;
+    height: 100%;
+    background: #e2e8f0;
+    transition: all 0.5s ease;
+}
+
+/* Horizontal going RIGHT: positioned to the right edge of the cell */
+.connector.horizontal.right {
+    left: 280px; /* right edge of the 280px cell */
+}
+
+/* Horizontal going LEFT: positioned to the left edge of the cell */
+.connector.horizontal.left {
+    right: 280px; /* left edge of the 280px cell */
+}
+
+.node-cell.completed .connector.horizontal .line {
+    background: var(--primary);
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+}
+
+/* --- U-Turn connectors --- */
+/*
+   A U-turn goes from a node in row N down to a node in row N+1.
+   The node is always at column 0 (leftmost) or column 2 (rightmost).
+   
+   u-right: node is in col 2 (rightmost), curve goes out to the RIGHT
+   u-left:  node is in col 0 (leftmost), curve goes out to the LEFT
+*/
+.connector.u-turn {
+    position: absolute;
+    top: 50%;
+    width: 80px;
+    /* height = half card (130) + row gap (120) + half card (130) = 380 */
+    height: 380px;
+    z-index: 1;
+}
+
+.connector.u-turn.u-right {
+    left: 280px; /* right edge of the cell */
+}
+
+.connector.u-turn.u-left {
+    right: 280px; /* left edge of the cell */
+}
+
+.connector.u-turn.u-right .line {
+    width: 100%;
+    height: 100%;
+    border: 6px solid #e2e8f0;
+    border-left: none;
+    border-radius: 0 40px 40px 0;
+}
+
+.connector.u-turn.u-left .line {
+    width: 100%;
+    height: 100%;
+    border: 6px solid #e2e8f0;
+    border-right: none;
+    border-radius: 40px 0 0 40px;
+}
+
+.node-cell.completed .connector.u-turn .line {
+    border-color: var(--primary);
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
+}
+
+/* ==========================================
+   ICONS AND TEXT
+   ========================================== */
+.node-icon {
+    width: 64px;
+    height: 64px;
+    background: #f8faff;
+    border-radius: 20px;
+    margin: 0 auto 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    color: var(--primary);
+    border: 1px solid #eef2ff;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
+    transition: all 0.3s ease;
+}
+
+.node-cell.completed .node-icon {
+    background: linear-gradient(135deg, var(--primary), #818cf8);
+    color: white;
+    border: none;
+    box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
+}
+
+.node-month {
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: var(--primary);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 0.75rem;
+    opacity: 0.6;
+}
+
+.node-info h3 {
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+
+.click-hint {
+    margin-top: auto;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--primary);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.node-box:hover .click-hint {
+    opacity: 1;
+}
+
+/* ==========================================
+   HEADER ACTIONS
+   ========================================== */
+.header-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    padding: 0.6rem 1.25rem;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--primary);
+}
+
+.btn-privacy {
+    padding: 0.6rem 1.25rem;
+    border-radius: var(--radius-md);
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.2s;
+}
+
+.btn-privacy.public {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--success);
+    border-color: rgba(16, 185, 129, 0.2);
+}
+
+.btn-privacy.private {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-secondary);
+    border-color: var(--border-color);
+}
+
+.btn-privacy:hover {
+    transform: translateY(-2px);
+}
+
+/* ==========================================
+   BOTTOM INFO CARDS
+   ========================================== */
+.bottom-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2.5rem;
+    max-width: 1200px;
+    margin: 0 auto 5rem;
+}
+
+.market-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.m-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.m-stat label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.m-stat span {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--primary);
+}
+
+.d-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--radius-full);
+    font-size: 0.875rem;
+    width: fit-content;
+}
+
+.d-badge.high { background: rgba(16, 185, 129, 0.1); color: var(--secondary); }
+.d-badge.medium { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+
+.m-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.m-tags span {
+    font-size: 0.875rem;
+    padding: 0.3rem 0.8rem;
+    background: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+}
+
+.info-card {
+    padding: 2.5rem;
+    background: var(--surface);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-lg);
+}
+
+.info-card h3 {
+    margin-bottom: 1.5rem;
+    color: var(--text-primary);
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.t-missing {
+    background: rgba(244, 63, 94, 0.1);
+    color: var(--accent);
+    padding: 0.4rem 1rem;
+    border-radius: var(--radius-full);
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+/* ==========================================
+   MENTOR CHAT
+   ========================================== */
+.mentor-chat {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.chat-btn {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    border: none;
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    box-shadow: var(--shadow-xl), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.chat-ui {
+    width: 400px;
+    height: 600px;
+    margin-bottom: 1rem;
+    background: var(--surface);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-xl);
+    border: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: fadeIn 0.3s ease;
+}
+
+.chat-header {
+    padding: 1.25rem;
+    background: var(--primary);
+    color: white;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.chat-log {
+    flex: 1;
+    padding: 1.5rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.chat-m {
+    padding: 1rem 1.25rem;
+    border-radius: var(--radius-lg);
+    font-size: 0.9375rem;
+    max-width: 85%;
+    line-height: 1.5;
+}
+
+.chat-m.user {
+    align-self: flex-end;
+    background: var(--primary);
+    color: white;
+    border-bottom-right-radius: 4px;
+}
+
+.chat-m.mentor {
+    align-self: flex-start;
+    background: var(--bg-color);
+    color: var(--text-primary);
+    border-bottom-left-radius: 4px;
+    border: 1px solid var(--border-color);
+}
+
+.chat-in {
+    padding: 1.25rem;
+    border-top: 1px solid var(--border-color);
+    background: var(--surface);
+}
+
+.chat-in input {
+    width: 100%;
+    padding: 0.875rem 1.5rem;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--border-color);
+    background: var(--bg-color);
+    color: var(--text-primary);
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.chat-in input:focus {
+    border-color: var(--primary);
+}
+
+/* ==========================================
+   RESPONSIVE
+   ========================================== */
+@media (max-width: 1100px) {
+    .snake-container {
+        padding: 0 1rem;
+    }
+    .snake-row {
+        grid-template-columns: 1fr !important;
+        justify-items: center;
+    }
+    .snake-row + .snake-row {
+        margin-top: 0;
+    }
+    .node-cell {
+        width: 100%;
+        max-width: 400px;
+        margin-bottom: 3rem;
+    }
+    .empty-cell {
+        display: none;
+    }
+    .connector { display: none !important; }
+}
+
+@media (max-width: 768px) {
+    .header-left h1 { font-size: 2.5rem; }
+    .tech-header { flex-direction: column; text-align: center; gap: 2rem; }
+    .bottom-info { grid-template-columns: 1fr; }
+    .chat-ui { width: calc(100vw - 2rem); right: 1rem; }
+}
