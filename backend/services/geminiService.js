@@ -71,7 +71,7 @@ const generateRoadmap = async (roadmapParams) => {
             }
         `;
 
-        let modelToUse = 'gemini-2.0-flash';
+        let modelToUse = 'gemini-flash-latest';
         console.log(`Calling Gemini API with model: ${modelToUse}`);
         
         let result;
@@ -81,9 +81,9 @@ const generateRoadmap = async (roadmapParams) => {
                 contents: prompt,
             });
         } catch (initialError) {
-            // Check if it's a quota error or if gemini-2.0-flash is unavailable
+            // Check if it's a quota error or if the model is unavailable
             if (initialError.message?.includes('RESOURCE_EXHAUSTED') || initialError.message?.includes('quota')) {
-                console.warn("Gemini 2.0 Quota exceeded, falling back to Gemini 2.0 Flash Lite...");
+                console.warn("Gemini Flash Latest Quota exceeded, falling back to Gemini 2.0 Flash Lite...");
                 modelToUse = 'gemini-2.0-flash-lite';
                 result = await ai.models.generateContent({
                     model: modelToUse,
@@ -134,7 +134,7 @@ const chatWithMentor = async (message, history = []) => {
         }
         prompt += "\nAnswer the user helpfully and concisely.";
 
-        let modelToUse = 'gemini-2.0-flash';
+        let modelToUse = 'gemini-flash-latest';
         let result;
         
         try {
@@ -144,7 +144,7 @@ const chatWithMentor = async (message, history = []) => {
             });
         } catch (initialError) {
             if (initialError.message?.includes('RESOURCE_EXHAUSTED') || initialError.message?.includes('quota')) {
-                console.warn("Gemini 2.0 Chat Quota exceeded, falling back to 2.0 Flash Lite...");
+                console.warn("Gemini Flash Latest Chat Quota exceeded, falling back to 2.0 Flash Lite...");
                 modelToUse = 'gemini-2.0-flash-lite';
                 result = await ai.models.generateContent({
                     model: modelToUse,
