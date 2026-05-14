@@ -83,8 +83,8 @@ const generateRoadmap = async (roadmapParams) => {
         } catch (initialError) {
             // Check if it's a quota error or if gemini-2.0-flash is unavailable
             if (initialError.message?.includes('RESOURCE_EXHAUSTED') || initialError.message?.includes('quota')) {
-                console.warn("Gemini 2.0 Quota exceeded, falling back to Gemini 1.5 Flash...");
-                modelToUse = 'gemini-1.5-flash';
+                console.warn("Gemini 2.0 Quota exceeded, falling back to Gemini 2.0 Flash Lite...");
+                modelToUse = 'gemini-2.0-flash-lite';
                 result = await ai.models.generateContent({
                     model: modelToUse,
                     contents: prompt,
@@ -144,8 +144,8 @@ const chatWithMentor = async (message, history = []) => {
             });
         } catch (initialError) {
             if (initialError.message?.includes('RESOURCE_EXHAUSTED') || initialError.message?.includes('quota')) {
-                console.warn("Gemini 2.0 Chat Quota exceeded, falling back to 1.5 Flash...");
-                modelToUse = 'gemini-1.5-flash';
+                console.warn("Gemini 2.0 Chat Quota exceeded, falling back to 2.0 Flash Lite...");
+                modelToUse = 'gemini-2.0-flash-lite';
                 result = await ai.models.generateContent({
                     model: modelToUse,
                     contents: prompt,
