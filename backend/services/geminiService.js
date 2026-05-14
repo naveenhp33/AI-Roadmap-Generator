@@ -71,16 +71,33 @@ const generateRoadmap = async (roadmapParams) => {
             }
         `;
 
-        console.log("Calling Gemini API with model: gemini-2.0-flash");
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.0-flash',
-            contents: prompt,
-        });
+        let modelToUse = 'gemini-2.0-flash';
+        console.log(`Calling Gemini API with model: ${modelToUse}`);
+        
+        let result;
+        try {
+            result = await ai.models.generateContent({
+                model: modelToUse,
+                contents: prompt,
+            });
+        } catch (initialError) {
+            // Check if it's a quota error or if gemini-2.0-flash is unavailable
+            if (initialError.message?.includes('RESOURCE_EXHAUSTED') || initialError.message?.includes('quota')) {
+                console.warn("Gemini 2.0 Quota exceeded, falling back to Gemini 1.5 Flash...");
+                modelToUse = 'gemini-1.5-flash';
+                result = await ai.models.generateContent({
+                    model: modelToUse,
+                    contents: prompt,
+                });
+            } else {
+                throw initialError;
+            }
+        }
 
-        if (response.text) {
-            console.log("Raw Response received from Gemini");
+        if (result && result.text) {
+            console.log(`Raw Response received from Gemini (${modelToUse})`);
             // Clean markdown if present
-            const cleanedText = response.text.replace(/```json|```/gi, '').trim();
+            const cleanedText = result.text.replace(/```json|```/gi, '').trim();
             try {
                 return JSON.parse(cleanedText);
             } catch (e) {
@@ -88,13 +105,19 @@ const generateRoadmap = async (roadmapParams) => {
                 throw new Error("AI returned invalid JSON: " + e.message);
             }
         } else {
-            console.error("Gemini Response missing text property:", response);
+            console.error("Gemini Response missing text property:", result);
             throw new Error("No text returned from Gemini API");
         }
 
     } catch (error) {
         console.error("Gemini API Error:", error);
-        throw new Error("Failed to generate roadmap: " + error.message);
+        
+        let userMessage = error.message;
+        if (error.message?.includes('RESOURCE_EXHAUSTED')) {
+            userMessage = "API Quota exceeded. Please wait a minute and try again. Gemini Free Tier has strict limits.";
+        }
+        
+        throw new Error(userMessage);
     }
 };
 
@@ -111,15 +134,35 @@ const chatWithMentor = async (message, history = []) => {
         }
         prompt += "\nAnswer the user helpfully and concisely.";
 
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.0-flash',
-            contents: prompt,
-        });
+        let modelToUse = 'gemini-2.0-flash';
+        let result;
+        
+        try {
+            result = await ai.models.generateContent({
+                model: modelToUse,
+                contents: prompt,
+            });
+        } catch (initialError) {
+            if (initialError.message?.includes('RESOURCE_EXHAUSTED') || initialError.message?.includes('quota')) {
+                console.warn("Gemini 2.0 Chat Quota exceeded, falling back to 1.5 Flash...");
+                modelToUse = 'gemini-1.5-flash';
+                result = await ai.models.generateContent({
+                    model: modelToUse,
+                    contents: prompt,
+                });
+            } else {
+                throw initialError;
+            }
+        }
 
-        return response.text;
+        return result.text;
     } catch (error) {
         console.error("Gemini Chat Error:", error);
-        throw new Error("Failed to chat with mentor: " + error.message);
+        let userMessage = error.message;
+        if (error.message?.includes('RESOURCE_EXHAUSTED')) {
+            userMessage = "Chat Quota exceeded. Please wait a moment.";
+        }
+        throw new Error(userMessage);
     }
 };
 
